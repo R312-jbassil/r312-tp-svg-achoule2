@@ -12,6 +12,14 @@
     "@tailwindcss/vite": "^4.1.13",
     "astro": "^5.13.5",
     "daisyui": "^5.1.12",
+    "openai": "^5.20.3"
+  },
+  "devDependencies": {
     "tailwindcss": "^4.1.13"
-  }
+  },
+  "description": "- Nom:\r - Prenom:\r - Netlify:",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
