@@ -1,0 +1,87 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+  <div class="min-h-screen bg-base-200 py-10">
+    <div class="max-w-4xl mx-auto space-y-8">
+      
+      <div class="text-center">
+        <h1 class="text-4xl font-bold text-primary">Générateur de SVG</h1>
+        <p class="text-sm text-gray-500 mt-2">Décris un objet et laisse l'IA le dessiner en SVG</p>
+      </div>
+
+      
+      <div class="card bg-base-100 shadow-xl p-6">
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-semibold">Prompt utilisateur</span>
+          </label>
+          <textarea id="user-prompt" class="textarea textarea-bordered h-24" placeholder="Ex: a red car"></textarea>
+        </div>
+        <div class="mt-4 text-right">
+          <button id="generate-button" class="btn btn-primary btn-wide">Générer SVG</button>
+        </div>
+      </div>
+
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Code SVG -->
+        <div class="card bg-base-100 shadow-md p-4">
+          <h2 class="text-lg font-bold mb-2">Code SVG :</h2>
+          <pre id="svg-output" class="bg-gray-100 p-4 rounded overflow-x-auto text-sm"></pre>
+        </div>
+
+        
+        <div class="card bg-base-100 shadow-md p-4">
+          <h2 class="text-lg font-bold mb-2">Aperçu :</h2>
+          <div id="svg-container" class="border rounded bg-white p-4 flex items-center justify-center min-h-[200px]">
+            <span class="text-gray-400">Aucun SVG généré pour l'instant</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    
+    async function generateSVG(prompt) {
+      const res = await fetch('/api/generateSVG', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      return data.svg;
+    }
+
+    async function handleSubmit() {
+      const promptElement = document.getElementById("user-prompt");
+      const generateButton = document.getElementById("generate-button");
+      const svgContainer = document.getElementById("svg-container");
+      const svgOutput = document.getElementById("svg-output");
+
+      const prompt = promptElement.value.trim();
+      if (!prompt) return;
+
+      generateButton.disabled = true;
+      generateButton.textContent = "Génération...";
+      svgContainer.innerHTML = `<span class="loading loading-ring loading-lg"></span>`;
+      svgOutput.textContent = "";
+
+      try {
+        const svgCode = await generateSVG(prompt);
+        svgOutput.textContent = svgCode || "Aucun SVG généré.";
+        svgContainer.innerHTML = svgCode || `<span class="text-error">Erreur de génération</span>`;
+      } catch (err) {
+        svgOutput.textContent = "Erreur lors de la génération.";
+        svgContainer.innerHTML = `<span class="text-error">Erreur serveur</span>`;
+      }
+
+      generateButton.disabled = false;
+      generateButton.textContent = "Générer SVG";
+    }
+
+    document.getElementById("generate-button").addEventListener("click", handleSubmit);
+  </script>
+</Layout>
