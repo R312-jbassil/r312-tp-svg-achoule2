@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
 ---
 
 <Layout>
@@ -52,47 +53,55 @@ import Layout from '../layouts/Layout.astro';
   </div>
 
   <script>
-    
+    //@ts-nocheck
+    let promptList = [];
+
     async function generateSVG(prompt) {
       const res = await fetch('/api/generateSVG', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify(prompt),
       });
       const data = await res.json();
       return data.svg;
     }
 
     async function handleSubmit() {
-      const promptElement = document.getElementById("user-prompt");
-      const generateButton = document.getElementById("generate-button");
-      const svgContainer = document.getElementById("svg-container");
-      const svgOutput = document.getElementById("svg-output");
+    let prompt = "";
+    let aiResponse = "";
+    const promptElement = document.getElementById("user-prompt");
+    prompt = promptElement ? promptElement.value : "";
+    console.log("submitted: ", prompt);
+    // Réinitialiser la liste des prompts
+    promptList.length = 0; 
+    promptList.push({ role: "user", content: prompt });
+    const svgContainer = document.getElementById("svg-container");
+    // Afficher un spinner
+    svgContainer.innerHTML = `<span class="loading loading-ring loading-xl"></span>`;
+    generateButton.disabled = true;
+    //editButton.disabled = true;
+    let svgOutput = document.getElementById("svg-output");
+    // Appeler la fonction pour générer le SVG
+    aiResponse = await generateSVG(promptList);
+    // Extraire le SVG de la réponse
+    const svgMatch = aiResponse.content.match(/<svg[\s\S]*?<\/svg>/i);
+    aiResponse.content = svgMatch ? svgMatch[0] : "";
+    console.log("svgCode: ", aiResponse.content);
+    // Ajouter la réponse de l'IA à la liste des prompts
+    promptList.push(aiResponse);
+    // Afficher le SVG généré
+    svgOutput.textContent = aiResponse.content;
+    svgContainer.innerHTML = aiResponse.content;
+    // Réactiver les boutons
+    generateButton.disabled = false;
+    //editButton.disabled = false;
+}
 
-      const prompt = promptElement.value.trim();
-      if (!prompt) return;
 
-      generateButton.disabled = true;
-      generateButton.textContent = "Génération...";
-      svgContainer.innerHTML = `<span class="loading loading-ring loading-lg"></span>`;
-      svgOutput.textContent = "";
+    const generateButton = document.getElementById("generate-button");
+    generateButton.addEventListener("click", handleSubmit);
 
-      try {
-        const svgCode = await generateSVG(prompt);
-        svgOutput.textContent = svgCode || "Aucun SVG généré.";
-        svgContainer.innerHTML = svgCode || `<span class="text-error">Erreur de génération</span>`;
-      } catch (err) {
-        svgOutput.textContent = "Erreur lors de la génération.";
-        svgContainer.innerHTML = `<span class="text-error">Erreur serveur</span>`;
-      }
-
-      generateButton.disabled = false;
-      generateButton.textContent = "Générer SVG";
-    }
-
-    document.getElementById("generate-button").addEventListener("click", handleSubmit);
-
-    document.getElementById("save-button").addEventListener("click", async () => {
+   const saveButton=  document.getElementById("save-button").addEventListener("click", async () => {
   const name = document.getElementById("svg-name").value.trim();
   const code = document.getElementById("svg-output").textContent.trim();
 
@@ -111,6 +120,22 @@ import Layout from '../layouts/Layout.astro';
   } else {
     alert("Erreur : " + result.error);
   }
+});
+
+const user = JSON.parse(localStorage.getItem("user"));
+
+saveButton.addEventListener("click", async () => {
+  const name = prompt("Enter a name for the SVG:");
+  const svgOutput = document.getElementById("svg-output")?.textContent;
+
+  const params = {
+    nom: name,
+    code_svg: svgOutput || "<svg></svg>",
+    chat_history: JSON.stringify(promptList),
+    user: user.id
+  };
+
+  await saveSVG(params); // cette fonction doit POST vers PB collection Svg
 });
 
   </script>

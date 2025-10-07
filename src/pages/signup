@@ -1,0 +1,59 @@
+---
+if (Astro.locals.user) {
+  return Astro.redirect("/");
+}
+---
+
+<html lang="fr" data-theme="light">
+  <head>
+    <title>Signup</title>
+    <meta name="viewport" content="width=device-width" />
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.8.0/dist/full.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen flex items-center justify-center bg-base-200">
+    <div class="card w-full max-w-md shadow-xl bg-base-100">
+      <div class="card-body">
+        <h1 class="card-title text-3xl mb-4 justify-center">Créer un compte</h1>
+        <form id="signup-form" class="flex flex-col gap-4">
+          <input type="text" name="username" placeholder="Nom d'utilisateur" required class="input input-bordered" />
+          <input type="email" name="email" placeholder="Email" required class="input input-bordered" />
+          <input type="password" name="password" placeholder="Mot de passe" required class="input input-bordered" />
+          <input type="password" name="passwordConfirm" placeholder="Confirmer le mot de passe" required class="input input-bordered" />
+          <button type="submit" class="btn btn-primary w-full">S'inscrire</button>
+        </form>
+        <p id="status" class="mt-4 text-center text-error"></p>
+        <p class="mt-6 text-center text-sm">
+          Déjà un compte ? <a href="/login" class="link link-primary">Se connecter</a>
+        </p>
+      </div>
+    </div>
+    <script>
+      //@ts-nocheck
+      const form = document.getElementById("signup-form");
+      const status = document.getElementById("status");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const res = await fetch("/api/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: fd.get("username"),
+            email: fd.get("email"),
+            password: fd.get("password"),
+            passwordConfirm: fd.get("passwordConfirm"),
+          }),
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.location.href = "/";
+        } else {
+          status.textContent = "❌ Inscription échouée";
+        }
+      });
+    </script>
+  </body>
+</html>
